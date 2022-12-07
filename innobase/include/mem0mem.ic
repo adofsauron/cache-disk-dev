@@ -572,7 +572,7 @@ mem_strdup(
 	const char*	str)	/* in: string to be copied */
 {
 	ulint	len = strlen(str) + 1;
-	return(memcpy(mem_alloc(len), str, len));
+	return (char*)(memcpy(mem_alloc(len), str, len));
 }
 
 /**************************************************************************
@@ -588,7 +588,7 @@ mem_strdupl(
 {
 	char*	s = mem_alloc(len + 1);
 	s[len] = 0;
-	return(memcpy(s, str, len));
+	return (char*)(memcpy(s, str, len));
 }
 
 /**************************************************************************
@@ -638,7 +638,7 @@ mem_heap_strdupl(
 	const char*	str,	/* in: string to be copied */
 	ulint		len)	/* in: length of str, in bytes */
 {
-	char*	s = mem_heap_alloc(heap, len + 1);
+	char*	s = (char*)mem_heap_alloc(heap, len + 1);
 	s[len] = 0;
-	return(memcpy(s, str, len));
+	return (char*) (memcpy(s, str, len));
 }

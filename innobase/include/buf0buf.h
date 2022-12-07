@@ -23,6 +23,8 @@ Created 11/5/1995 Heikki Tuuri
 #ifndef buf0buf_h
 #define buf0buf_h
 
+#pragma GCC diagnostic ignored "-fpermissive"
+
 #include "univ.i"
 #include "fil0fil.h"
 #include "mtr0types.h"

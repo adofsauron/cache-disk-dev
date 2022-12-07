@@ -19,6 +19,9 @@
 #ifndef _global_h
 #define _global_h
 
+#include <stdint.h>
+#include <pthread.h>
+
 #ifndef EMBEDDED_LIBRARY
 #define HAVE_REPLICATION
 #define HAVE_EXTERNAL_CLIENT
@@ -840,7 +843,7 @@ typedef unsigned long my_off_t;
 #endif
 #define MY_FILEPOS_ERROR	(~(my_off_t) 0)
 #if !defined(__WIN__) && !defined(OS2)
-typedef off_t os_off_t;
+// typedef off_t os_off_t;
 #endif
 
 #if defined(__WIN__)
@@ -881,7 +884,7 @@ typedef char		byte;	/* Smallest addressable unit */
 #endif
 typedef char		my_bool; /* Small bool */
 #if !defined(bool) && !defined(bool_defined) && (!defined(HAVE_BOOL) || !defined(__cplusplus))
-typedef char		bool;	/* Ordinary boolean values 0 1 */
+// typedef char		bool;	/* Ordinary boolean values 0 1 */
 #endif
 	/* Macros for converting *constants* to the right type */
 #define INT8(v)		(int8) (v)

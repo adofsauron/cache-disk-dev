@@ -9,6 +9,8 @@ Created 11/26/1995 Heikki Tuuri
 #ifndef mtr0mtr_h
 #define mtr0mtr_h
 
+#pragma GCC diagnostic ignored "-fpermissive"
+
 #include "univ.i"
 #include "mem0mem.h"
 #include "dyn0dyn.h"

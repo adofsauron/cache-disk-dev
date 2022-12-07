@@ -6,6 +6,8 @@ Mini-transaction buffer
 Created 11/26/1995 Heikki Tuuri
 *******************************************************/
 
+#pragma GCC diagnostic ignored "-fpermissive"
+
 #include "sync0sync.h"
 #include "sync0rw.h"
 #include "mach0data.h"

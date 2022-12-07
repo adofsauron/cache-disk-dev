@@ -9,6 +9,8 @@ Created 6/9/1994 Heikki Tuuri
 #ifndef mem0mem_h
 #define mem0mem_h
 
+#pragma GCC diagnostic ignored "-fpermissive"
+
 #include "univ.i"
 #include "ut0mem.h"
 #include "ut0byte.h"
