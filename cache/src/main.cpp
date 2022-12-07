@@ -32,7 +32,7 @@ static void CacheInitData(CLRUCache<TPersistID, Data>& cache, int size)
 int main(int argc, const char** argv) {
 
 
-    CLRUCache<TPersistID, Data> cache{ LCT_START };
+    CLRUCache<TPersistID, Data> cache;
 
 	constexpr int size = 5;
 	CacheInitData(cache, size);

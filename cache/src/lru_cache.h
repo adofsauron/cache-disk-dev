@@ -19,22 +19,11 @@
 
 #include "assert.h"
 
-enum LRU_CACHE_TYPE
-{
-	LCT_START,
-	LCT_OVER,
-};
-
-void LogDebug(...)
-{
-
-}
 
 struct LRU_RT_Info
 {
 	int limit			= 0;
 	int clean_size		= 0;
-	time_t expire_time	= 0;
 
 	int cache			= 0;
 	int hit				= 0;
@@ -47,7 +36,6 @@ struct LRU_RT_Info
 		std::cout << "lru info : "
 			<< ", limit = " << limit
 			<< ", clean_size = " <<clean_size
-			<< ", expire_time = " << expire_time
 			<< ", cache = " << cache
 			<< ", hit = " << hit
 			<< ", miss = " << miss
@@ -57,21 +45,13 @@ struct LRU_RT_Info
 	}
 };
 
-// 目的是给LRU配置控制模块用,不是用来限制访问接口
-class ILRUCache
-{
-	virtual LRU_CACHE_TYPE GetCacheType() = 0;
-	virtual bool UpdateConfig(int limit, int clean_size, time_t expire_time) = 0;
-};
-
 template<typename key_type, typename value_type>
-class CLRUCache : public ILRUCache
+class CLRUCache
 {
 private:
 
 	struct LRUData : public value_type
 	{ 
-		time_t _ut = 0;
 		bool _del = false;
 	};
 
@@ -104,11 +84,9 @@ public:
 	@param expire_time 过期时间,超过该时间视为过期,访问时删除. -1: 永不过期
 	@return 
 	*/
-	CLRUCache(LRU_CACHE_TYPE cache_type, int limit = 10000, int clean_size = 100, time_t expire_time = -1)
-		: m_cache_type ( cache_type )
-		, m_limit ( limit )
+	CLRUCache(int limit = 10000, int clean_size = 100, time_t expire_time = -1)
+		: m_limit ( limit )
 		, m_clean_size ( clean_size )
-		, m_expire_time ( expire_time )
 	{
 
 		assert( m_limit > 0 );
@@ -120,20 +98,6 @@ public:
 		m_indexs.reserve(m_limit);
 #endif
 	}
-
-	/**
-	@brief LRU类型
-	@praram
-	@return
-	*/
-	virtual LRU_CACHE_TYPE GetCacheType() { return m_cache_type; };
-
-	/**
-	@brief 更新配置
-	@praram
-	@return
-	*/
- 	virtual bool UpdateConfig(int limit, int clean_size, time_t expire_time) override;
 	
 	/**
 	@brief 拿第一个元素
@@ -252,12 +216,6 @@ public:
 	@return
 	*/
 	int ExpireCount() const { return m_expire_count; }
-
-	/**
-	@brief 查看失效时间
-	@return
-	*/
-	int Expire() const { return m_expire_time; }
 	
 	/**
 	@brief 查看缓存容量
@@ -318,12 +276,6 @@ public:
 private:
 	
 	/**
-	@brief 校验过期, 过期则被清理
-	@return true:未过期, false: 已过期
-	*/
-	bool CheckExpire(IndexContainer_iterator& itr);
-
-	/**
 	@brief Forward
 	@return
 	*/
@@ -347,11 +299,8 @@ private:
 	ValueContainer m_values;	///< 缓存序列，保存了缓存项的值
 	IndexContainer m_indexs;	///< 缓存索引，保存了缓存序列的迭代器
 
-	LRU_CACHE_TYPE m_cache_type = LCT_START;
 	int m_limit = 0;
 	int m_clean_size = 0;
-	time_t m_expire_time = 0;
-
 	int m_cache_count = 0;
 	int m_hit_count = 0;
 	int m_miss_count = 0;
@@ -366,7 +315,7 @@ void CLRUCache<key_type, value_type>::Dump() const
 	std::stringstream ss;
 
 	ss << "limit = " << m_limit << ", clean_size = " 
-		<< m_clean_size << ", expire_time = " << m_expire_time;
+		<< m_clean_size;
 	ss << ", cache_count = " << m_cache_count 
 		<< ", hit_count = " << m_hit_count << ", miss_count = " << m_miss_count;
 	ss << ", expire_count = " << m_expire_count;
@@ -471,11 +420,6 @@ value_type* CLRUCache<key_type, value_type>::Find( key_type key )
 		return nullptr;
 	}
 
-	if (!CheckExpire(itr)) // 过期
-	{
-		return nullptr;
-	}
-
 	m_values.splice(m_values.begin(), m_values, itr->second);
 
 	LRUData& data = itr->second->second;
@@ -489,11 +433,6 @@ value_type* CLRUCache<key_type, value_type>::Peek( key_type key )
 	IndexContainer_iterator itr = m_indexs.find( key );
 
 	if (itr == m_indexs.end())
-	{
-		return nullptr;
-	}
-
-	if (!CheckExpire(itr)) // 过期
 	{
 		return nullptr;
 	}
@@ -517,7 +456,6 @@ void CLRUCache<key_type, value_type>::Add( key_type key, const value_type& value
 		}
 
 		LRUData data;
-		data._ut = 0;
 		data._del = false;
 
 		value_type* data_base = &data;
@@ -535,7 +473,6 @@ void CLRUCache<key_type, value_type>::Add( key_type key, const value_type& value
 		value_type* data_base = &data;
 		*data_base = value;
 
-		data._ut = 0;
 		data._del = false;
 	}
 }
@@ -550,76 +487,6 @@ template <typename key_type, typename value_type> template <typename FunctorT>
 void CLRUCache<key_type, value_type>::ForEach(FunctorT _Func) const
 {
 	std::for_each(m_values.begin(), m_values.end(), _Func);
-}
-
-template<typename key_type, typename value_type>
-bool CLRUCache<key_type, value_type>::CheckExpire(CLRUCache<key_type, value_type>::IndexContainer_iterator& itr)
-{
-	if (itr->second->second._del)
-	{
-		RemovePosIndex(itr); // 标记删除不应做expire计数
-		return false;
-	}
-
-	if (m_expire_time <= 0) // 永不过期
-	{
-		return true;
-	}
-
-	time_t ut = itr->second->second._ut;
-	time_t now = GetTime();
-	if ((now - ut) >= m_expire_time) // 过期
-	{
-		RemovePosIndex(itr);
-		++m_expire_count;
-		return false;
-	}
-
-	return true;
-}
-
-template<typename key_type, typename value_type>
-bool CLRUCache<key_type, value_type>::UpdateConfig(int limit, int clean_size, time_t expire_time)
-{
-	if (limit <= 0)
-	{
-		return false;
-	}
-
-	if (clean_size <= 0)
-	{
-		return false;
-	}
-
-	if (limit < clean_size)
-	{
-		return false;
-	}
-
-	m_expire_time = expire_time;
-
-	if (limit <= m_cache_count)
-	{
-		int num = m_cache_count - limit + clean_size;
-		while (num--)
-		{
-			RemoveLast();
-		}
-	}
-
-	m_limit = limit;
-	m_clean_size = clean_size;
-
-#ifdef _HASH_MAP_
-	m_indexs.reserve(m_limit);
-#endif
-
-	// LogInfo("LRU upate config, type = ", m_cache_type
-	// 	, ", limit = ", m_limit
-	// 	, ", clean_size = ", m_clean_size
-	// 	, ", expire_time = ", m_expire_time);
-
-	return true;
 }
 
 template<typename key_type, typename value_type>
@@ -639,7 +506,6 @@ void CLRUCache<key_type, value_type>::GetRTInfo(LRU_RT_Info& lru_rt_info)
 {
 	lru_rt_info.limit			= m_limit;
 	lru_rt_info.clean_size		= m_clean_size;
-	lru_rt_info.expire_time		= m_expire_time;
 
 	lru_rt_info.cache			= m_cache_count;
 	lru_rt_info.hit				= m_hit_count;
@@ -692,16 +558,9 @@ void CLRUCache<key_type, value_type>::CleanNeedDel()
 {
 	std::vector<IndexContainer_iterator> del_elements;
 
-	bool can_expire = m_expire_time > 0;
 	for (IndexContainer_iterator itr = m_indexs.begin(); itr != m_indexs.end(); ++itr)
 	{
 		if (itr->second->second._del) // 如果标记删除,则无论过期都应删除
-		{
-			del_elements.emplace_back(itr);
-			continue;
-		}
-
-		if ((can_expire))
 		{
 			del_elements.emplace_back(itr);
 			continue;
