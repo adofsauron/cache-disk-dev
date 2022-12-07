@@ -243,10 +243,6 @@ public:
 	*/
 	void Dump() const;
 
-    //从中随机出count个元素到container中，不够则有多少给多少
-    typedef std::map<key_type, value_type>  ElemMap;
-    void Rand(ElemMap &container, int count) const;
-
 	/**
 	@brief 获取缓存索引
 	@return 
