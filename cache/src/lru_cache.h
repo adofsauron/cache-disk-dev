@@ -28,7 +28,6 @@ struct LRU_RT_Info
 	int cache			= 0;
 	int hit				= 0;
 	int miss			= 0;
-	int expire			= 0;
 	size_t cell			= 0;
 
 	void Dump()
@@ -39,7 +38,6 @@ struct LRU_RT_Info
 			<< ", cache = " << cache
 			<< ", hit = " << hit
 			<< ", miss = " << miss
-			<< ", expire = " << expire
 			<< ", cell = " << cell
 		<< std::endl;
 	}
@@ -210,12 +208,6 @@ public:
 	@return 
 	*/
 	int Miss() const { return m_miss_count; }
-
-	/**
-	@brief 查看失效次数
-	@return
-	*/
-	int ExpireCount() const { return m_expire_count; }
 	
 	/**
 	@brief 查看缓存容量
@@ -304,7 +296,6 @@ private:
 	int m_cache_count = 0;
 	int m_hit_count = 0;
 	int m_miss_count = 0;
-	int m_expire_count = 0;
 
 	static constexpr size_t m_cell = sizeof(LRUData);
 };
@@ -318,7 +309,6 @@ void CLRUCache<key_type, value_type>::Dump() const
 		<< m_clean_size;
 	ss << ", cache_count = " << m_cache_count 
 		<< ", hit_count = " << m_hit_count << ", miss_count = " << m_miss_count;
-	ss << ", expire_count = " << m_expire_count;
 
 	std::cout << ss.str() << std::endl;
 }
@@ -376,7 +366,6 @@ void CLRUCache<key_type, value_type>::Clear()
 	m_cache_count = 0;
 	m_hit_count = 0;
 	m_miss_count = 0;
-	m_expire_count = 0;
 }
 
 template<typename key_type, typename value_type>
@@ -502,7 +491,6 @@ void CLRUCache<key_type, value_type>::GetRTInfo(LRU_RT_Info& lru_rt_info)
 	lru_rt_info.cache			= m_cache_count;
 	lru_rt_info.hit				= m_hit_count;
 	lru_rt_info.miss			= m_miss_count;
-	lru_rt_info.expire			= m_expire_count;
 	lru_rt_info.cell			= m_cell;
 }
 
