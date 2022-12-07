@@ -321,14 +321,6 @@ void CLRUCache<key_type, value_type>::Dump() const
 	ss << ", expire_count = " << m_expire_count;
 
 	std::cout << ss.str() << std::endl;
-
-	// 每一条数据写一次日志,避免内存占用过大
-	for (const auto& kv : m_values)
-	{
-		// ss.str("");
-		// ss << kv.first << "\t: " << kv.second;
-		// std::cout << ss.str() << std::endl;
-	}
 }
 
 template<typename key_type, typename value_type>
